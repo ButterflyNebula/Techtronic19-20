@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.Servo;
 
 public class ChassisAssembly
 {
@@ -12,6 +13,8 @@ public class ChassisAssembly
         robotHardware = hardware;
     }
 
+    private boolean rightDown = true;
+    private boolean leftDown = true;
 
     /**
      *-----------------------------------------------------------------------------------
@@ -76,7 +79,7 @@ public class ChassisAssembly
      * are given negative power and the front right wheel and back left wheel are given power.
      * @param speed at which the wheel motors will turn
      */
-    protected void moveRight (double speed)
+    protected void moveLeft (double speed)
     {
         robotHardware.frontLeftWheel.setPower(speed);
         robotHardware.backLeftWheel.setPower(-speed);
@@ -89,7 +92,7 @@ public class ChassisAssembly
      * are given negative power and the front left wheel and back right wheel are given power.
      * @param speed at which the wheel motors will turn
      */
-    protected void moveLeft (double speed)
+    protected void moveRight (double speed)
     {
         robotHardware.frontLeftWheel.setPower(-speed);
         robotHardware.backLeftWheel.setPower(speed);
@@ -191,6 +194,9 @@ public class ChassisAssembly
     public int getFrontRightWheelCurrentPosition() {return robotHardware.frontRightWheel.getCurrentPosition();}
     public int getFrontLeftWheelCurrentPosition() {return robotHardware.frontLeftWheel.getCurrentPosition();}
 
+    //Hook Positions
+    public double getRhookPosition() {return robotHardware.rightHook.getPosition();}
+    public double getLhookPosition() {return robotHardware.leftHook.getPosition();}
 
     /**
      * The following four methods sets the target position to which each wheel's motor should
@@ -200,4 +206,47 @@ public class ChassisAssembly
     public void setBackRightWheelTargetPosition(int position) {robotHardware.backRightWheel.setTargetPosition(position);}
     public void setFrontLeftWheelTargetPosition(int position) {robotHardware.frontLeftWheel.setTargetPosition(position);}
     public void setFrontRightWeelTargetPosition(int position) {robotHardware.frontRightWheel.setTargetPosition(position);}
+
+
+    //Hook Controls
+    public void openHook(){
+        robotHardware.rightHook.setPosition(0.2);
+        robotHardware.leftHook.setPosition(0.9);
+        rightDown = false;
+        leftDown = false;
+    }
+    public void closeHook() {
+        robotHardware.rightHook.setPosition(0.9);
+        robotHardware.leftHook.setPosition(0);
+        rightDown = true;
+        leftDown = true;
+    }
+
+    public void moveRightHook()
+    {
+        if(rightDown)
+        {
+            robotHardware.rightHook.setPosition(0.2);
+            rightDown = false;
+        }
+        else
+        {
+            robotHardware.rightHook.setPosition(0.9);
+            rightDown = true;
+        }
+    }
+
+    public void moveLeftHook()
+    {
+        if(leftDown)
+        {
+            robotHardware.leftHook.setPosition(0.9);
+            leftDown = false;
+        }
+        else
+        {
+            robotHardware.leftHook.setPosition(0);
+            leftDown = true;
+        }
+    }
 }
