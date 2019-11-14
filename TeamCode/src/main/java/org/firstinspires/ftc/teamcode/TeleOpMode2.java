@@ -46,7 +46,6 @@ public class TeleOpMode2 extends LinearOpMode {
             boolean closeHook = gamepad1.dpad_right;
 
             boolean scissorStepUp = gamepad1.dpad_up;
-            boolean scissorStepDown = gamepad1.a;
             boolean scissorDown = gamepad1.dpad_down;
 
             boolean autograb = gamepad1.x;
@@ -66,6 +65,9 @@ public class TeleOpMode2 extends LinearOpMode {
 
             boolean rightHook = gamepad2.dpad_right;
             boolean leftHook = gamepad2.dpad_left;
+
+            boolean scissorStepDown = gamepad2.a;
+
 
             //Movement
             if (drive > 0) {
@@ -147,10 +149,6 @@ public class TeleOpMode2 extends LinearOpMode {
                 encoderScissor(SCISSOR_UP_SPEED, 3, 8);
                 skyStoneBot.getScissorAssembly().move(0);
                 skyStoneBot.getGripperAssembly().wheelStop();
-
-                encoderDrive(WHEEL_SPEED, -8, 8);
-                skyStoneBot.getChassisAssembly().stopMoving();
-
             }
 
             if(startPos)

@@ -17,6 +17,7 @@ import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.RobotLog;
 
@@ -63,6 +64,12 @@ public class QuarryAuto extends LinearOpMode {
     private OpenGLMatrix lastLocation = null;
     private VuforiaLocalizer vuforia = null;
 
+    //Encoder Constants
+    final double COUNTS_PER_MOTOR_REV    = 1120 ;    // eg: TETRIX Motor Encoder
+    final double DRIVE_GEAR_REDUCTION = 1.0;
+    final double WHEEL_DIAMETER_INCHES = 4.0;
+    final double COUNTS_PER_INCH = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
+            (WHEEL_DIAMETER_INCHES * Math.PI);
 
     //Creating a Rover robot object
     SkyBot skyStoneBot = new SkyBot();
@@ -79,7 +86,6 @@ public class QuarryAuto extends LinearOpMode {
     @Override public void runOpMode() {
 
         skyStoneBot.initRobot(hardwareMap);
-
 
 
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
@@ -116,12 +122,12 @@ public class QuarryAuto extends LinearOpMode {
 
         // Rotate the phone vertical about the X axis if it's in portrait mode
         if (PHONE_IS_PORTRAIT) {
-            phoneXRotate = 90 ;
+            phoneXRotate = 90;
         }
 
-        final float CAMERA_FORWARD_DISPLACEMENT  = 0 * mmPerInch;
+        final float CAMERA_FORWARD_DISPLACEMENT = 0 * mmPerInch;
         final float CAMERA_VERTICAL_DISPLACEMENT = 0 * mmPerInch;
-        final float CAMERA_LEFT_DISPLACEMENT     = 0;
+        final float CAMERA_LEFT_DISPLACEMENT = 0;
 
         OpenGLMatrix robotFromCamera = OpenGLMatrix
                 .translation(CAMERA_FORWARD_DISPLACEMENT, CAMERA_LEFT_DISPLACEMENT, CAMERA_VERTICAL_DISPLACEMENT)
@@ -137,30 +143,51 @@ public class QuarryAuto extends LinearOpMode {
         targetsSkyStone.activate();
 
         runtime.reset();
+        encoderDrive(0.5, 12, 10);
+        skyStoneBot.getChassisAssembly().stopMoving();
 
-        while (targetVisible == false && runtime.seconds() < 30 && opModeIsActive())
-        {
+        runtime.reset();
+
+        while (targetVisible == false && opModeIsActive()) {
+
             double currentPos = 0.5 * (skyStoneBot.getNavigation().mrfrDistance() + skyStoneBot.getNavigation().mrbrDistance());
+
+            while (Double.isNaN(currentPos)) {
+                telemetry.addData("Current Pos", "is not a number - sensing again");
+                currentPos = 0.5 * (skyStoneBot.getNavigation().mrfrDistance() + skyStoneBot.getNavigation().mrbrDistance());
+                telemetry.addData("Current Pos", currentPos);
+                telemetry.update();
+            }
+
             double finalPos = currentPos + 8;
 
-            while (opModeIsActive() && currentPos < finalPos && currentPos < 24)
+            telemetry.addData("Current Pos", currentPos);
+            telemetry.addData("Final Pos", finalPos);
+            telemetry.update();
+            sleep(3000);
+
+
+            while (opModeIsActive() && currentPos < finalPos)
             {
                 currentPos = 0.5 * (skyStoneBot.getNavigation().mrfrDistance() + skyStoneBot.getNavigation().mrbrDistance());
-                skyStoneBot.getChassisAssembly().moveLeft(0.3);
+                while (Double.isNaN(currentPos)) {
+                    currentPos = 0.5 * (skyStoneBot.getNavigation().mrfrDistance() + skyStoneBot.getNavigation().mrbrDistance());
+                }
+                skyStoneBot.getChassisAssembly().moveLeft(1);
+                telemetry.addData("Current Distance", currentPos);
+                telemetry.update();
             }
             skyStoneBot.getChassisAssembly().stopMoving();
 
-
-            targetVisible = false;
-            for (VuforiaTrackable trackable : allTrackables) {
-                if (((VuforiaTrackableDefaultListener)trackable.getListener()).isVisible())
-                {
-                    telemetry.addData("Visible Target", trackable.getName());
+            ElapsedTime senseTime = new ElapsedTime();
+            while (targetVisible == false && opModeIsActive() && senseTime.seconds() < 4)
+            {
+                if (((VuforiaTrackableDefaultListener) stoneTarget.getListener()).isVisible()) {
                     targetVisible = true;
-                    skyStoneBot.getChassisAssembly().stopMoving();
-                    sleep(1000);
+                    telemetry.addData("Visible Target", stoneTarget.getName());
+                    telemetry.update();
 
-                    OpenGLMatrix robotLocationTransform = ((VuforiaTrackableDefaultListener)trackable.getListener()).getUpdatedRobotLocation();
+                    OpenGLMatrix robotLocationTransform = ((VuforiaTrackableDefaultListener) stoneTarget.getListener()).getUpdatedRobotLocation();
                     if (robotLocationTransform != null) {
                         lastLocation = robotLocationTransform;
                     }
@@ -169,15 +196,15 @@ public class QuarryAuto extends LinearOpMode {
                 }
             }
 
-            telemetry.addData("No target Found", 0);
+            telemetry.addData("Target Found", targetVisible);
             telemetry.update();
             sleep(1000);
-        }
+        }// end of while (targetVisible == false && opModeIsActive())
 
         skyStoneBot.getChassisAssembly().stopMoving();
 
-        while(opModeIsActive())
-        {
+
+        while (opModeIsActive()) {
             if (targetVisible) {
                 // express position (translation) of robot in inches.
                 VectorF translation = lastLocation.getTranslation();
@@ -196,4 +223,69 @@ public class QuarryAuto extends LinearOpMode {
         // Disable Tracking when we are done;
         targetsSkyStone.deactivate();
     }
+
+
+    public void encoderDrive(double speed, double inches, double timeoutS)
+    {
+        int newBackLeftTarget;
+        int newBackRightTarget;
+        int newFrontLeftTarget;
+        int newFrontRightTarget;
+
+        // Ensure that the opmode is still active
+        if (opModeIsActive()) {
+
+            skyStoneBot.getChassisAssembly().changeToEncoderMode();
+
+            // Determine new target position, and pass to motor controller
+            newBackLeftTarget = skyStoneBot.getChassisAssembly().getBackLeftWheelCurrentPosition() + (int)(inches * COUNTS_PER_INCH);
+            newBackRightTarget = skyStoneBot.getChassisAssembly().getBackRightWheelCurrentPosition() + (int)(inches * COUNTS_PER_INCH);
+            newFrontLeftTarget = skyStoneBot.getChassisAssembly().getFrontLeftWheelCurrentPosition() + (int)(inches * COUNTS_PER_INCH);
+            newFrontRightTarget = skyStoneBot.getChassisAssembly().getFrontRightWheelCurrentPosition() + (int)(inches * COUNTS_PER_INCH);
+
+
+
+            skyStoneBot.getChassisAssembly().setBackLeftWheelTargetPosition(newBackLeftTarget);
+            skyStoneBot.getChassisAssembly().setBackRightWheelTargetPosition(newBackRightTarget);
+            skyStoneBot.getChassisAssembly().setFrontLeftWheelTargetPosition(newFrontLeftTarget);
+            skyStoneBot.getChassisAssembly().setFrontRightWeelTargetPosition(newFrontRightTarget);
+
+            // Turn On RUN_TO_POSITION
+            skyStoneBot.getChassisAssembly().setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+
+            // reset the timeout time and start motion.
+            runtime.reset();
+            skyStoneBot.getChassisAssembly().setBackLeftWheelPower(Math.abs(speed));
+            skyStoneBot.getChassisAssembly().setBackRightWheelPower(Math.abs(speed));
+            skyStoneBot.getChassisAssembly().setFrontLeftWheelPower(Math.abs(speed));
+            skyStoneBot.getChassisAssembly().setFrontRightWheelPower(Math.abs(speed));
+
+
+            // keep looping while we are still active, and there is time left, and both motors are running.
+            while (opModeIsActive() &&
+                    (runtime.seconds() < timeoutS) &&
+                    (skyStoneBot.getChassisAssembly().isBackLeftWheelBusy() && skyStoneBot.getChassisAssembly().isBackRightWheelBusy() &&
+                            skyStoneBot.getChassisAssembly().isFrontLeftWheelBusy() && skyStoneBot.getChassisAssembly().isFrontRightWheelBusy())) {
+
+                // Display it for the driver.
+                telemetry.addData("Path1",  "Running to %7d :%7d : %7d :%7d",
+                        newBackLeftTarget,  newBackRightTarget, newFrontLeftTarget, newFrontRightTarget);
+                telemetry.addData("Path2",  "Running at %7d :%7d : %7d : %7d",
+                        skyStoneBot.getChassisAssembly().getBackLeftWheelCurrentPosition(),
+                        skyStoneBot.getChassisAssembly().getBackRightWheelCurrentPosition(),
+                        skyStoneBot.getChassisAssembly().getFrontLeftWheelCurrentPosition(),
+                        skyStoneBot.getChassisAssembly().getFrontRightWheelCurrentPosition());
+                telemetry.update();
+            }
+
+            // Stop all motion;
+            skyStoneBot.getChassisAssembly().stopMoving();
+
+            // Turn off RUN_TO_POSITION
+            skyStoneBot.getChassisAssembly().setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        }
+
+    }//end of encoderDrive
 }
