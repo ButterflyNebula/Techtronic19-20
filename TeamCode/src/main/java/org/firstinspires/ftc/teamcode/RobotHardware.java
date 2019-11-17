@@ -39,10 +39,14 @@ public class RobotHardware
     //Hand Lowering Servo
     public Servo lifter = null;
 
+    //Distance Sensors
     ModernRoboticsI2cRangeSensor mrfr = null;
     ModernRoboticsI2cRangeSensor mrbr = null;
     ModernRoboticsI2cRangeSensor mrfl = null;
     ModernRoboticsI2cRangeSensor mrbl = null;
+
+    Rev2mDistanceSensor backLaser = null;
+    Rev2mDistanceSensor frontLaser = null;
 
     //Webcam
     WebcamName webcam = null;
@@ -102,6 +106,9 @@ public class RobotHardware
 
         mrfl = hwMap.get(ModernRoboticsI2cRangeSensor.class, "mrfl");
         mrbl = hwMap.get(ModernRoboticsI2cRangeSensor.class, "mrbl");
+
+        backLaser = hwMap.get(Rev2mDistanceSensor.class, "back");
+        frontLaser = hwMap.get(Rev2mDistanceSensor.class, "front");
 
     }
 

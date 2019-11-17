@@ -23,6 +23,11 @@ public class Navigation
         double frontDistance = mrfrDistance();
         double backDistance = mrbrDistance();
 
+        if(Double.isNaN(frontDistance) || Double.isNaN((backDistance)) || frontDistance == 0 || backDistance == 0)
+        {
+            return 10000;
+        }
+
 
         double differenceInDistance = frontDistance - backDistance;
 
@@ -44,6 +49,10 @@ public class Navigation
         double frontDistance = mrflDistance();
         double backDistance = mrblDistance();
 
+        if(Double.isNaN(frontDistance) || Double.isNaN((backDistance)) || frontDistance == 0 || backDistance == 0)
+        {
+            return 10000;
+        }
 
         double differenceInDistance = frontDistance - backDistance;
 
@@ -52,5 +61,9 @@ public class Navigation
 
         return angle;
     }
+
+    protected double backLaserDistance() { return robotHardware.backLaser.getDistance(DistanceUnit.INCH);}
+    protected double frontLaserDistance() { return robotHardware.frontLaser.getDistance(DistanceUnit.INCH);}
+
 
 }

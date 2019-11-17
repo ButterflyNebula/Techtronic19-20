@@ -34,6 +34,9 @@ public class TeleOpMode2 extends LinearOpMode {
             telemetry.update();
         }
 
+        skyStoneBot.getGripperAssembly().lifterUp();
+        sleep(500);
+
         while (opModeIsActive())
         {
             //Gamepad 1 Controls
