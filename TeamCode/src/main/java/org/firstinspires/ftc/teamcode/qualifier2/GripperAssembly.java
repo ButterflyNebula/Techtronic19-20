@@ -1,6 +1,4 @@
-package org.firstinspires.ftc.teamcode;
-
-import com.qualcomm.robotcore.hardware.Servo;
+package org.firstinspires.ftc.teamcode.qualifier2;
 
 public class GripperAssembly
 {

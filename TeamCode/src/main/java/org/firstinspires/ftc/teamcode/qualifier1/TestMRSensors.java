@@ -1,11 +1,12 @@
-package org.firstinspires.ftc.teamcode;
-
+package org.firstinspires.ftc.teamcode.qualifier1;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-@TeleOp(name = "LaserDistanceTest", group = "Test")
-public class TestLaserSensors extends LinearOpMode
+@TeleOp(name = "MRSensorsTest", group = "Test")
+@Disabled
+public class TestMRSensors extends LinearOpMode
 {
     //Creating a Rover robot object
     SkyBot skyStoneBot = new SkyBot();
@@ -23,8 +24,10 @@ public class TestLaserSensors extends LinearOpMode
 
         while (opModeIsActive())
         {
-            telemetry.addData("Front Laser", skyStoneBot.getNavigation().frontLaserDistance());
-            telemetry.addData("Back Laser", skyStoneBot.getNavigation().backLaserDistance());
+            telemetry.addData("MRFR", skyStoneBot.getNavigation().mrfrDistance());
+            telemetry.addData("MRBR", skyStoneBot.getNavigation().mrbrDistance());
+            telemetry.addData("MRFL", skyStoneBot.getNavigation().mrflDistance());
+            telemetry.addData("MRBL", skyStoneBot.getNavigation().mrblDistance());
             telemetry.update();
         }
     }

@@ -1,7 +1,6 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.qualifier1;
 
 import com.qualcomm.robotcore.hardware.HardwareMap;
-
 
 
 /**
