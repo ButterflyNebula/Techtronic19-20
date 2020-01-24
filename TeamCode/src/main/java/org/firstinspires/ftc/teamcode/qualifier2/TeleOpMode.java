@@ -5,16 +5,32 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-@TeleOp(name = "TeleOpModeS", group = "Scrimmage")
+@TeleOp(name = "TeleOpMode", group = "Qualifier")
 public class TeleOpMode extends LinearOpMode {
     private static double   WHEEL_SPEED = 1.0;
-    private static double   SCISSOR_SPEED = 0.5;
-    static final double     COUNTS_PER_MOTOR_REV    = 1120 ;    // eg: TETRIX Motor Encoder
-    static final double     COUNTS_PER_INCH         = 1185.33;
-    private int position = 0;
-    int stoneNumber = 0;
-    double currentGripperHeight = 0;
-    double grabHeight = 0.25;
+    private static double INTAKE_SPEED = 1.0;
+
+    final double COUNTS_PER_MOTOR_REV    = 1120 ;    // eg: TETRIX Motor Encoder
+    final double DRIVE_GEAR_REDUCTION = 0.5;
+    final double WHEEL_DIAMETER_INCHES = 4.0;
+    final double COUNTS_PER_INCH = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
+            (WHEEL_DIAMETER_INCHES * Math.PI);
+    final double COUNTS_PER_SCISSOR_INCH = 200;
+
+
+    boolean intaking = false;
+
+    boolean capstonePlaced = false;
+
+    //Gripper Servo Positions
+    //Grabbing
+    double gripperGrab = 0.5675;
+    double gripperSwivelGrab = 0.9;
+    double swivelGrab = 0.69;
+    //Placing
+    double gripperPlace = 0.2;
+    double gripperSwivelPlace = 0.23;
+    double swivelPlace = 0.56;
 
 
     //Creating a Rover robot object
@@ -31,43 +47,48 @@ public class TeleOpMode extends LinearOpMode {
             telemetry.update();
         }
 
-        while (opModeIsActive()) {
+        skyStoneBot.getChassisAssembly().openHook();
+        skyStoneBot.getPlacementAssembly().swivel(swivelPlace);
+        skyStoneBot.getPlacementAssembly().gripperSwivel(gripperSwivelPlace);
+        skyStoneBot.getPlacementAssembly().grab(gripperPlace);
+        skyStoneBot.getPlacementAssembly().slapperReturn();
 
+        double moveto = 0.56;
+        double moveto2 = 0.17;
 
+        while (opModeIsActive())
+        {
             //Gamepad 1 Controls
             double drive = gamepad1.left_stick_y;
-            double turn = gamepad1.left_stick_x;
+            double turn = gamepad1.right_stick_x;
             double sideRight = gamepad1.right_trigger;
             double sideLeft = gamepad1.left_trigger;
-            boolean autoGrab = gamepad1.x;
-            boolean autoPlace = gamepad1.b;
-            boolean startPos = gamepad1.a;
 
-            //Gamepad 2 Controls
-            boolean openHook = gamepad2.b;
-            boolean closeHook = gamepad2.x;
-            float scissorMotion = gamepad2.left_stick_y;
-            boolean gripperOpen = gamepad2.dpad_left;
-            boolean gripperClose = gamepad2.dpad_right;
-            boolean lifterDown= gamepad2.dpad_down;
-            boolean lifterUp = gamepad2.dpad_up;
-            float horizontalMotion = gamepad2.right_stick_x;
-            boolean grab = gamepad1.dpad_right;
-            boolean release = gamepad1.dpad_left;
+            boolean openHook = gamepad1.dpad_left;
+            boolean closeHook = gamepad1.dpad_right;
 
-            if (grab)
-            {
-                skyStoneBot.getGripperAssembly().wheelIntake(-0.7);
-            }
-            else if (release)
-            {
-                skyStoneBot.getGripperAssembly().wheelIntake(0.7);
-            }
-            else
-            {
-                skyStoneBot.getGripperAssembly().wheelIntake(0);
-            }
-            //GamePad 1 Controls
+            boolean gripperIntake = gamepad1.x;
+            boolean gripperOutake = gamepad2.b; //changed to gamepad 2
+
+            boolean grab = gamepad1.y;
+            boolean place = gamepad1.a;
+            boolean flip = gamepad1.b;
+
+            boolean capstone = gamepad2.x;
+
+            boolean lifterUp = gamepad1.dpad_up;
+            boolean lifterDown = gamepad1.dpad_down;
+
+            boolean rightHook = gamepad1.right_bumper;
+            boolean leftHook = gamepad1.left_bumper;
+
+            float diagonalFrontRight = gamepad2.right_stick_x;
+            float diagonalFrontLeft = gamepad2.right_stick_x;
+            float diagonalBackRight = gamepad2.left_stick_x;
+            float diagonalBackLeft = gamepad2.left_stick_x;
+
+
+
             //Movement
             if (drive > 0) {
                 skyStoneBot.getChassisAssembly().moveForward(-WHEEL_SPEED * drive);
@@ -92,138 +113,199 @@ public class TeleOpMode extends LinearOpMode {
             else if (sideLeft > 0) {
                 skyStoneBot.getChassisAssembly().moveLeft(WHEEL_SPEED * sideLeft);
             }
+            else if(diagonalFrontRight > 0)
+            {
+                skyStoneBot.getChassisAssembly().diagonalForwardRight(WHEEL_SPEED);
+            }
+            else if(diagonalFrontLeft < 0)
+            {
+                skyStoneBot.getChassisAssembly().diagonalForwardLeft(WHEEL_SPEED);
+            }
+            else if(diagonalBackRight > 0)
+            {
+                skyStoneBot.getChassisAssembly().diagonalBackwardsRight(WHEEL_SPEED);
+            }
+            else if(diagonalBackLeft < 0)
+            {
+                skyStoneBot.getChassisAssembly().diagonalBackwardsLeft(WHEEL_SPEED);
+            }
             //stop moving
             else {
                 skyStoneBot.getChassisAssembly().stopMoving();
             }
 
-
-
-            if(startPos)
+            //Gripper Controls
+            if(gripperIntake)
             {
-                skyStoneBot.getGripperAssembly().lifterUp();
-                sleep(750);
-
-                encoderScissor(1, -1, 7);
-                skyStoneBot.getScissorAssembly().move(0);
-
-
-
+                skyStoneBot.getPlacementAssembly().slapperReturn();
+                skyStoneBot.getGripperAssembly().wheelIntake(INTAKE_SPEED);
+                intaking = true;
             }
 
-            //Gamepad2 Controls
+            else if(gripperOutake)
+            {
+                skyStoneBot.getGripperAssembly().wheelOutake(INTAKE_SPEED);
+                intaking = false;
+            }
+            else if(intaking == false)
+            {
+                skyStoneBot.getGripperAssembly().wheelStop();
+            }
+
             //Hooks
             if(openHook)
             {
                 skyStoneBot.getChassisAssembly().openHook();
                 sleep(250);
             }
-
-            if(closeHook)
+            else if(closeHook)
             {
                 skyStoneBot.getChassisAssembly().closeHook();
                 sleep(250);
             }
 
-            //Scissor Motion
-            if (scissorMotion > 0)
+            if(rightHook)
             {
-                encoderScissor(1, 0.25,8);
-                skyStoneBot.getScissorAssembly().move(0);
+                skyStoneBot.getChassisAssembly().moveRightHook();
                 sleep(250);
             }
-            else if (scissorMotion < 0)
+            else if(leftHook)
             {
-                encoderScissor(0.25, -0.25,8);
-                skyStoneBot.getScissorAssembly().move(0);
-                sleep(250);
-            }
-            else
-            {
-                skyStoneBot.getScissorAssembly().move(0);
-            }
-
-            //Lifter motion
-            if(lifterUp)
-            {
-                skyStoneBot.getGripperAssembly().lifterUp();
-                sleep(250);
-            }
-            if(lifterDown)
-            {
-                skyStoneBot.getGripperAssembly().lifterDown();
+                skyStoneBot.getChassisAssembly().moveLeftHook();
                 sleep(250);
             }
 
-            //horizontal motion
-            if (horizontalMotion > 0)
-            {
-                skyStoneBot.getHorizontalAssembly().HorizontalExtend();
+            if (lifterUp){
+                skyStoneBot.getPlacementAssembly().lifterUp(1.0);
             }
-            else if (horizontalMotion < 0)
-            {
-                skyStoneBot.getHorizontalAssembly().HorizonatlRetract();
+
+            else if (lifterDown && skyStoneBot.getPlacementAssembly().lifterTouchState()){
+                skyStoneBot.getPlacementAssembly().lifterDown(1.0);
             }
-            else
-            {
-                skyStoneBot.getHorizontalAssembly().stopHorizontal();
+
+            else {
+                skyStoneBot.getPlacementAssembly().lifterStay();
             }
+
+            if(grab)
+            {
+                skyStoneBot.getGripperAssembly().wheelStop();
+                intaking = false;
+
+                skyStoneBot.getPlacementAssembly().slap();
+               // sleep(250);
+                skyStoneBot.getPlacementAssembly().grab(gripperGrab);
+            }
+            else if(flip)
+            {
+                skyStoneBot.getPlacementAssembly().swivel(swivelGrab);
+                //sleep(100);
+                skyStoneBot.getPlacementAssembly().gripperSwivel(gripperSwivelGrab);
+                skyStoneBot.getPlacementAssembly().slapperReturn();
+            }
+
+            else if (place){
+                skyStoneBot.getPlacementAssembly().grab(gripperPlace);
+                sleep(250);
+
+
+                encoderDrive(0.5, 10, 5);
+                sleep(250);
+
+                while (opModeIsActive() && skyStoneBot.getPlacementAssembly().lifterTouchState())
+                {
+                    skyStoneBot.getPlacementAssembly().lifterDown(1);
+                }
+                skyStoneBot.getPlacementAssembly().lifterStay();
+
+                skyStoneBot.getPlacementAssembly().swivel(swivelPlace);
+                skyStoneBot.getPlacementAssembly().gripperSwivel(gripperSwivelPlace);
+            }
+
+            if(capstone)
+            {
+                if(capstonePlaced)
+                {
+                    skyStoneBot.getPlacementAssembly().capstoneReturn();
+                    capstonePlaced = false;
+                }
+                else
+                {
+                    skyStoneBot.getPlacementAssembly().placeCapstone();
+                    capstonePlaced = true;
+                }
+            }
+
         }
     }
 
-    public void encoderScissor(double speed,
-                             double inches,
-                             double timeoutS) {
-        int newLeftTarget;
-        int newRightTarget;
+    /**
+     *ENCODER DRIVE METHOD
+     * @param speed (at which the robot should move)
+     * @param inches (positive is forward, negative is backwards)
+     * @param timeoutS (the robot will stop moving if it after this many seconds)
+     */
+    public void encoderDrive(double speed, double inches, double timeoutS)
+    {
+        int newBackLeftTarget;
+        int newBackRightTarget;
+        int newFrontLeftTarget;
+        int newFrontRightTarget;
 
         // Ensure that the opmode is still active
         if (opModeIsActive()) {
 
+            skyStoneBot.getChassisAssembly().changeToEncoderMode();
+
             // Determine new target position, and pass to motor controller
-            newLeftTarget =  skyStoneBot.getScissorAssembly().robotHardware.leftScissor.getCurrentPosition() + (int)(inches * COUNTS_PER_INCH);
-            newRightTarget =  skyStoneBot.getScissorAssembly().robotHardware.rightScissor.getCurrentPosition() + (int)(inches * COUNTS_PER_INCH);
-            skyStoneBot.getScissorAssembly().robotHardware.leftScissor.setTargetPosition(newLeftTarget);
-            skyStoneBot.getScissorAssembly().robotHardware.rightScissor.setTargetPosition(newRightTarget);
+            newBackLeftTarget = skyStoneBot.getChassisAssembly().getBackLeftWheelCurrentPosition() + (int)(inches * COUNTS_PER_INCH);
+            newBackRightTarget = skyStoneBot.getChassisAssembly().getBackRightWheelCurrentPosition() + (int)(inches * COUNTS_PER_INCH);
+            newFrontLeftTarget = skyStoneBot.getChassisAssembly().getFrontLeftWheelCurrentPosition() + (int)(inches * COUNTS_PER_INCH);
+            newFrontRightTarget = skyStoneBot.getChassisAssembly().getFrontRightWheelCurrentPosition() + (int)(inches * COUNTS_PER_INCH);
+
+
+
+            skyStoneBot.getChassisAssembly().setBackLeftWheelTargetPosition(newBackLeftTarget);
+            skyStoneBot.getChassisAssembly().setBackRightWheelTargetPosition(newBackRightTarget);
+            skyStoneBot.getChassisAssembly().setFrontLeftWheelTargetPosition(newFrontLeftTarget);
+            skyStoneBot.getChassisAssembly().setFrontRightWeelTargetPosition(newFrontRightTarget);
 
             // Turn On RUN_TO_POSITION
-            skyStoneBot.getScissorAssembly().robotHardware.leftScissor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            skyStoneBot.getScissorAssembly().robotHardware.rightScissor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            skyStoneBot.getChassisAssembly().setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
 
             // reset the timeout time and start motion.
             runtime.reset();
-            skyStoneBot.getScissorAssembly().robotHardware.leftScissor.setPower(Math.abs(speed));
-            skyStoneBot.getScissorAssembly().robotHardware.rightScissor.setPower(Math.abs(speed));
+            skyStoneBot.getChassisAssembly().setBackLeftWheelPower(Math.abs(speed));
+            skyStoneBot.getChassisAssembly().setBackRightWheelPower(Math.abs(speed));
+            skyStoneBot.getChassisAssembly().setFrontLeftWheelPower(Math.abs(speed));
+            skyStoneBot.getChassisAssembly().setFrontRightWheelPower(Math.abs(speed));
+
 
             // keep looping while we are still active, and there is time left, and both motors are running.
-            // Note: We use (isBusy() && isBusy()) in the loop test, which means that when EITHER motor hits
-            // its target position, the motion will stop.  This is "safer" in the event that the robot will
-            // always end the motion as soon as possible.
-            // However, if you require that BOTH motors have finished their moves before the robot continues
-            // onto the next step, use (isBusy() || isBusy()) in the loop test.
             while (opModeIsActive() &&
                     (runtime.seconds() < timeoutS) &&
-                    ( skyStoneBot.getScissorAssembly().robotHardware.leftScissor.isBusy() &&  skyStoneBot.getScissorAssembly().robotHardware.rightScissor.isBusy())) {
+                    (skyStoneBot.getChassisAssembly().isBackLeftWheelBusy() && skyStoneBot.getChassisAssembly().isBackRightWheelBusy() &&
+                            skyStoneBot.getChassisAssembly().isFrontLeftWheelBusy() && skyStoneBot.getChassisAssembly().isFrontRightWheelBusy())) {
 
                 // Display it for the driver.
-                telemetry.addData("Path1",  "Running to %7d :%7d", newLeftTarget,  newRightTarget);
-                telemetry.addData("Path2",  "Running at %7d :%7d",
-                        skyStoneBot.getScissorAssembly().robotHardware.leftScissor.getCurrentPosition(),
-                        skyStoneBot.getScissorAssembly().robotHardware.rightScissor.getCurrentPosition());
+                telemetry.addData("Path1",  "Running to %7d :%7d : %7d :%7d",
+                        newBackLeftTarget,  newBackRightTarget, newFrontLeftTarget, newFrontRightTarget);
+                telemetry.addData("Path2",  "Running at %7d :%7d : %7d : %7d",
+                        skyStoneBot.getChassisAssembly().getBackLeftWheelCurrentPosition(),
+                        skyStoneBot.getChassisAssembly().getBackRightWheelCurrentPosition(),
+                        skyStoneBot.getChassisAssembly().getFrontLeftWheelCurrentPosition(),
+                        skyStoneBot.getChassisAssembly().getFrontRightWheelCurrentPosition());
                 telemetry.update();
             }
 
             // Stop all motion;
-            skyStoneBot.getScissorAssembly().robotHardware.leftScissor.setPower(0);
-            skyStoneBot.getScissorAssembly().robotHardware.rightScissor.setPower(0);
+            skyStoneBot.getChassisAssembly().stopMoving();
 
             // Turn off RUN_TO_POSITION
-            skyStoneBot.getScissorAssembly().robotHardware.leftScissor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            skyStoneBot.getScissorAssembly().robotHardware.rightScissor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            skyStoneBot.getChassisAssembly().setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-            //  sleep(250);   // optional pause after each move
-
-            currentGripperHeight += -(inches);
         }
-    }
+
+    }//end of encoderDrive
 }

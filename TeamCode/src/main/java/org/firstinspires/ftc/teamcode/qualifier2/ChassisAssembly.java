@@ -15,6 +15,12 @@ public class ChassisAssembly
     private boolean rightDown = true;
     private boolean leftDown = true;
 
+    private double leftHookDown = 0.2;
+    private double rightHookDown = 0.6;
+
+    private double leftHookUp = 0.85;
+    private double rightHookUp = 0.01;
+
     /**
      *-----------------------------------------------------------------------------------
      * WHEEL CONTROLS
@@ -97,6 +103,35 @@ public class ChassisAssembly
         robotHardware.backLeftWheel.setPower(speed);
         robotHardware.frontRightWheel.setPower(speed);
         robotHardware.backRightWheel.setPower(-speed);
+    }
+
+    protected void diagonalForwardLeft (double speed)
+    {
+        robotHardware.frontLeftWheel.setPower(speed);
+        robotHardware.backLeftWheel.setPower(0);
+        robotHardware.frontRightWheel.setPower(0);
+        robotHardware.backRightWheel.setPower(speed);
+    }
+    protected void diagonalForwardRight (double speed)
+    {
+        robotHardware.frontLeftWheel.setPower(0);
+        robotHardware.backLeftWheel.setPower(speed);
+        robotHardware.frontRightWheel.setPower(speed);
+        robotHardware.backRightWheel.setPower(0);
+    }
+    protected void diagonalBackwardsLeft (double speed)
+    {
+        robotHardware.frontLeftWheel.setPower(-speed);
+        robotHardware.backLeftWheel.setPower(0);
+        robotHardware.frontRightWheel.setPower(0);
+        robotHardware.backRightWheel.setPower(-speed);
+    }
+    protected void diagonalBackwardsRight (double speed)
+    {
+        robotHardware.frontLeftWheel.setPower(0);
+        robotHardware.backLeftWheel.setPower(-speed);
+        robotHardware.frontRightWheel.setPower(-speed);
+        robotHardware.backRightWheel.setPower(0);
     }
 
     /**
@@ -209,14 +244,14 @@ public class ChassisAssembly
 
     //Hook Controls
     public void openHook(){
-        robotHardware.rightHook.setPosition(0.2);
-        robotHardware.leftHook.setPosition(0.9);
+        robotHardware.rightHook.setPosition(rightHookUp);
+        robotHardware.leftHook.setPosition(leftHookUp);
         rightDown = false;
         leftDown = false;
     }
     public void closeHook() {
-        robotHardware.rightHook.setPosition(0.9);
-        robotHardware.leftHook.setPosition(0);
+        robotHardware.rightHook.setPosition(rightHookDown);
+        robotHardware.leftHook.setPosition(leftHookDown);
         rightDown = true;
         leftDown = true;
     }
@@ -225,12 +260,12 @@ public class ChassisAssembly
     {
         if(rightDown)
         {
-            robotHardware.rightHook.setPosition(0.2);
+            robotHardware.rightHook.setPosition(rightHookUp);
             rightDown = false;
         }
         else
         {
-            robotHardware.rightHook.setPosition(0.9);
+            robotHardware.rightHook.setPosition(rightHookDown);
             rightDown = true;
         }
     }
@@ -239,12 +274,12 @@ public class ChassisAssembly
     {
         if(leftDown)
         {
-            robotHardware.leftHook.setPosition(0.9);
+            robotHardware.leftHook.setPosition(leftHookUp);
             leftDown = false;
         }
         else
         {
-            robotHardware.leftHook.setPosition(0);
+            robotHardware.leftHook.setPosition(leftHookDown);
             leftDown = true;
         }
     }

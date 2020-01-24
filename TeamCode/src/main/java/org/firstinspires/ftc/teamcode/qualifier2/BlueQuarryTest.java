@@ -1,8 +1,9 @@
 package org.firstinspires.ftc.teamcode.qualifier2;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
@@ -23,37 +24,38 @@ import static org.firstinspires.ftc.robotcore.external.navigation.AxesOrder.YZX;
 import static org.firstinspires.ftc.robotcore.external.navigation.AxesReference.EXTRINSIC;
 import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer.CameraDirection.BACK;
 
-@Autonomous
-public class BlueQuarry extends LinearOpMode
-{
-    //Vuforia Setup
+@Autonomous(name = "BlueQuarryTest", group = "Qualifier")
+public class BlueQuarryTest extends LinearOpMode {
+    // IMPORTANT: If you are using a USB WebCam, you must select CAMERA_CHOICE = BACK; and PHONE_IS_PORTRAIT = false;
     private static final VuforiaLocalizer.CameraDirection CAMERA_CHOICE = BACK;
     private static final boolean PHONE_IS_PORTRAIT = false  ;
+
+
     private static final String VUFORIA_KEY =
             "AVsSQB3/////AAABGehU0OjxREoznvNKEBqbvmskci8syRYfMKE0XlaGnZpw68DAZV19s7dfqc0vWrY78bAO2Ym2n1T2rDvNBOVVbMWxXIRo2c18JH6/c2fcKT1bRKxsG7bYq69+n9IHmKedY6rmTU1VOZZdtSTXh7exMsl67IAcnCZ0/ec+P+ZMpkK5v4X8d27rbEigGqqHayGe1/lG2afzgcHY7QxjJ/x5O4yGmVVs8wdzdupke19U+M8Z/x0FcYIfTAHuXcaydEL+h/w/ppcuNarD2ggo2BxdWeOGLx5GOin1yruVfvDAazPEuI0m3yEwXQNZ4e0ar2G0jDCZpAJPJcJRRVttBMwPoAvzTwySUx3qI1eNSJRAH+bk";
-    //Conversions and Target Information
+
+
     private static final float mmPerInch        = 25.4f;
     private static final float mmTargetHeight   = (6) * mmPerInch;          // the height of the center of the target image above the floor
+
     // Constant for Stone Target
     private static final float stoneZ = 2.00f * mmPerInch;
-    // Vuforia Class Members
+
+    // Constants for the center support targets
+    private static final float bridgeZ = 6.42f * mmPerInch;
+    private static final float bridgeY = 23 * mmPerInch;
+    private static final float bridgeX = 5.18f * mmPerInch;
+    private static final float bridgeRotY = 59;                                 // Units are degrees
+    private static final float bridgeRotZ = 180;
+
+    // Constants for perimeter targets
+    private static final float halfField = 72 * mmPerInch;
+    private static final float quadField  = 36 * mmPerInch;
+
+    // Class Members
     private OpenGLMatrix lastLocation = null;
     private VuforiaLocalizer vuforia = null;
-    //Target Found and Position variables
-    private boolean targetVisible = false;
-    private float phoneXRotate    = 0;
-    private float phoneYRotate    = 0;
-    private float phoneZRotate    = 0;
 
-    //Encoder Constants
-    final double COUNTS_PER_MOTOR_REV    = 1120 ;    // eg: TETRIX Motor Encoder
-    final double DRIVE_GEAR_REDUCTION = 1.0;
-    final double WHEEL_DIAMETER_INCHES = 4.0;
-    final double COUNTS_PER_INCH = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
-            (WHEEL_DIAMETER_INCHES * Math.PI);
-    final double COUNTS_PER_SIDE_INCH = 100;
-    final double COUNTS_PER_DEGREE = 16;
-    final double COUNTS_PER_SCISSOR_INCH = 200;
 
     //Creating a Rover robot object
     SkyBot skyStoneBot = new SkyBot();
@@ -61,146 +63,114 @@ public class BlueQuarry extends LinearOpMode
     //Time
     ElapsedTime runtime = new ElapsedTime();
 
-    //Motion/Distance Constants
-    final double WHEEL_SPEED = 1;
-    final double SCISSOR_UP_SPEED = 0.6;
-    final double   SCISSOR_DOWN_SPEED = 0.4;
-    final double INTAKE_SPEED = 0.7;
-    final double SIDE_SHIFT = 6;
-    final double DISTANCE_TO_GRAB_BLOCK = 24;
-    final double DISTANCE_PAST_BRIDGE = 90;
-    final double BACK_AWAY_FROM_BLOCK= 8;
-    final double PARKING_DISTANCE = DISTANCE_PAST_BRIDGE - BACK_AWAY_FROM_BLOCK - 50;
+    private boolean targetVisible = false;
+    private float phoneXRotate    = 0;
+    private float phoneYRotate    = 0;
+    private float phoneZRotate    = 0;
 
-    //Other Variables
-    int blockNumber = 0;
+    //Gripper Servo Positions
+    //Grabbing
+    double gripperGrab = 0.5675;
+    double gripperSwivelGrab = 0.9;
+    double swivelGrab = 0.69;
+    //Placing
+    double gripperPlace = 0.2;
+    double gripperSwivelPlace = 0.23;
+    double swivelPlace = 0.56;
 
-    @Override public void runOpMode()
-    {
-        /**
-         * INITIALIZATION
-         */
-        //Intialize Robot
+
+    //Variables
+    double blockNumber;
+    double sideShift;
+
+
+    //Constants
+    final double INTAKE_SPEED = 1.0;
+    final double WHEEL_SPEED = 1.0;
+    final double CAMERA_TO_GRIPPER = 6;
+    final double DISTANCE_TO_BRIDGE = 80;
+
+
+    //Encoder Constants
+    final double COUNTS_PER_MOTOR_REV    = 1120 ;    // eg: TETRIX Motor Encoder
+    final double DRIVE_GEAR_REDUCTION = 0.5;
+    final double WHEEL_DIAMETER_INCHES = 4.0;
+    final double COUNTS_PER_INCH = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
+            (WHEEL_DIAMETER_INCHES * Math.PI);
+    final double COUNTS_PER_SIDE_INCH = 50;
+    final double COUNTS_PER_DEGREE = 8.5;
+
+
+    @Override public void runOpMode() {
+
         skyStoneBot.initRobot(hardwareMap);
 
-        //Vuforia Setup
+
+
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters(cameraMonitorViewId);
+
         parameters.vuforiaLicenseKey = VUFORIA_KEY;
+
+
         parameters.cameraName = skyStoneBot.getNavigation().robotHardware.webcam;
+
+        //  Instantiate the Vuforia engine
         vuforia = ClassFactory.getInstance().createVuforia(parameters);
 
-        //Stone Target Setup
+
         VuforiaTrackables targetsSkyStone = this.vuforia.loadTrackablesFromAsset("Skystone");
+
         VuforiaTrackable stoneTarget = targetsSkyStone.get(0);
         stoneTarget.setName("Stone Target");
+
         List<VuforiaTrackable> allTrackables = new ArrayList<VuforiaTrackable>();
         allTrackables.addAll(targetsSkyStone);
+
+
         stoneTarget.setLocation(OpenGLMatrix
                 .translation(0, 0, stoneZ)
                 .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0, -90)));
 
-        //Camera Setup
+
         if (CAMERA_CHOICE == BACK) {
             phoneYRotate = -90;
         } else {
             phoneYRotate = 90;
         }
+
+        // Rotate the phone vertical about the X axis if it's in portrait mode
         if (PHONE_IS_PORTRAIT) {
-            phoneXRotate = 90;
+            phoneXRotate = 90 ;
         }
-        final float CAMERA_FORWARD_DISPLACEMENT = 0 * mmPerInch;
+
+        final float CAMERA_FORWARD_DISPLACEMENT  = 0 * mmPerInch;
         final float CAMERA_VERTICAL_DISPLACEMENT = 0 * mmPerInch;
-        final float CAMERA_LEFT_DISPLACEMENT = 0;
+        final float CAMERA_LEFT_DISPLACEMENT     = 0;
+
         OpenGLMatrix robotFromCamera = OpenGLMatrix
                 .translation(CAMERA_FORWARD_DISPLACEMENT, CAMERA_LEFT_DISPLACEMENT, CAMERA_VERTICAL_DISPLACEMENT)
                 .multiplied(Orientation.getRotationMatrix(EXTRINSIC, YZX, DEGREES, phoneYRotate, phoneZRotate, phoneXRotate));
 
-        //Add trackables
         for (VuforiaTrackable trackable : allTrackables) {
             ((VuforiaTrackableDefaultListener) trackable.getListener()).setPhoneInformation(robotFromCamera, parameters.cameraDirection);
         }
 
-        //Wait for Start
-        telemetry.addData("Waiting for start", "");
-        telemetry.update();
-        waitForStart();
 
-        /**
-         * DURING RUNTIME
-         */
-
-        //activate the target
         targetsSkyStone.activate();
 
-        preparation();
-
-        scanForSkyStone(stoneTarget);
-
-        alignWithSkyStone(stoneTarget);
-
-        //Raise the Scissor Lift and Extend the Arm.
-        skyStoneBot.getGripperAssembly().lifterUp();
-        sleep(500);
-        encoderScissor(SCISSOR_UP_SPEED, 2, 8);
-        while(opModeIsActive() && skyStoneBot.getHorizontalAssembly().horizontalTouch())
-        { skyStoneBot.getHorizontalAssembly().HorizontalExtend();}
-        skyStoneBot.getHorizontalAssembly().stopHorizontal();
-
-        grabStone();
-
-        deliverStone1();
-
-        releaseStone();
-/*
-        faceNextStone();
-
-        grabStone();
-
-        deliverStone2();
-
-        releaseStone();
-
- */
-
-        //Park
-        encoderDrive(WHEEL_SPEED, -PARKING_DISTANCE, 8);
-
-        targetsSkyStone.deactivate();
-    }
-
-    public void preparation()
-    {
         runtime.reset();
 
-        //Move to the Right
-        encoderSide(WHEEL_SPEED, 24, 8);
-
-
-        //Move forward in preperation to Scan for skystone target
-        encoderDrive(WHEEL_SPEED, 15, 10);
-        skyStoneBot.getChassisAssembly().stopMoving();
-    }
-
-    public void scanForSkyStone(VuforiaTrackable stoneTarget)
-    {
-        runtime.reset();
-        targetVisible = false;
-        while (targetVisible == false && opModeIsActive()) {
-            //Use Encoder
-            encoderSide(WHEEL_SPEED, -SIDE_SHIFT, 5);
-
-            ElapsedTime senseTime = new ElapsedTime();
-            while (targetVisible == false && opModeIsActive() && senseTime.seconds() < 0.25)
+        while (!opModeIsActive() && !isStopRequested())
+        {
+            targetVisible = false;
+            for (VuforiaTrackable trackable : allTrackables)
             {
-                telemetry.addData("Sensing...", "");
-                telemetry.update();
-                if (((VuforiaTrackableDefaultListener) stoneTarget.getListener()).isVisible()) {
+                if (((VuforiaTrackableDefaultListener)trackable.getListener()).isVisible())
+                {
                     targetVisible = true;
-                    telemetry.addData("Visible Target", stoneTarget.getName());
-                    telemetry.update();
 
-                    OpenGLMatrix robotLocationTransform = ((VuforiaTrackableDefaultListener) stoneTarget.getListener()).getUpdatedRobotLocation();
+                    OpenGLMatrix robotLocationTransform = ((VuforiaTrackableDefaultListener)trackable.getListener()).getUpdatedRobotLocation();
                     if (robotLocationTransform != null) {
                         lastLocation = robotLocationTransform;
                     }
@@ -209,256 +179,239 @@ public class BlueQuarry extends LinearOpMode
                 }
             }
 
-            telemetry.addData("Target Found", targetVisible);
+            if (targetVisible)
+            {
+                // express position (translation) of robot in inches.
+                VectorF translation = lastLocation.getTranslation();
+                telemetry.addData("Pos (in)", "{X, Y, Z} = %.1f, %.1f, %.1f",
+                        translation.get(0) / mmPerInch, translation.get(1) / mmPerInch, translation.get(2) / mmPerInch);
+                // express the rotation of the robot in degrees.
+                Orientation rotation = Orientation.getOrientation(lastLocation, EXTRINSIC, XYZ, DEGREES);
+                telemetry.addData("Rot (deg)", "{Roll, Pitch, Heading} = %.0f, %.0f, %.0f", rotation.firstAngle, rotation.secondAngle, rotation.thirdAngle);
+
+
+                double rightDistance = skyStoneBot.getNavigation().rightDistance() + 2;
+                double blockShift = translation.get(1) / mmPerInch;
+                double blockLocation = rightDistance - blockShift;
+                sideShift = CAMERA_TO_GRIPPER + blockShift;
+                blockNumber = (int) (Math.ceil(blockLocation / 8));
+                telemetry.addData("Right Distance", rightDistance);
+                telemetry.addData("BlockShift", blockShift);
+                telemetry.addData("Block Location", blockLocation);
+                telemetry.addData("Block Number", blockNumber);
+                telemetry.addData("Side Shift", sideShift);
+                telemetry.update();
+
+
+            }
+            else {
+                telemetry.addData("Visible Target", "none");
+            }
+
             telemetry.update();
-        }// end of while (targetVisible == false && opModeIsActive())
-        skyStoneBot.getChassisAssembly().stopMoving();
+        }
+
+        if(targetVisible) {
+            // express position (translation) of robot in inches.
+            VectorF translation = lastLocation.getTranslation();
+            telemetry.addData("Pos (in)", "{X, Y, Z} = %.1f, %.1f, %.1f",
+                    translation.get(0) / mmPerInch, translation.get(1) / mmPerInch, translation.get(2) / mmPerInch);
+            // express the rotation of the robot in degrees.
+            Orientation rotation = Orientation.getOrientation(lastLocation, EXTRINSIC, XYZ, DEGREES);
+            telemetry.addData("Rot (deg)", "{Roll, Pitch, Heading} = %.0f, %.0f, %.0f", rotation.firstAngle, rotation.secondAngle, rotation.thirdAngle);
+
+            double rightDistance = skyStoneBot.getNavigation().rightDistance() + 2;
+            double blockShift = translation.get(1) / mmPerInch;
+            double blockLocation = rightDistance - blockShift;
+            sideShift = CAMERA_TO_GRIPPER + blockShift;
+            blockNumber = (int) (Math.ceil(blockLocation / 8));
+            telemetry.addData("Right Distance", rightDistance);
+            telemetry.addData("BlockShift", blockShift);
+            telemetry.addData("Block Location", blockLocation);
+            telemetry.addData("Block Number", blockNumber);
+            telemetry.addData("Side Shift", sideShift);
+            telemetry.update();
+        }
+        else {
+            blockNumber = 6;
+            telemetry.addData("Block Number", blockNumber);
+            telemetry.update();
+        }
+
+        sleep(1000);
+
+        if(blockNumber < 4 || blockNumber > 6)
+        {
+            blockNumber = 5;
+        }
+
+        if(blockNumber == 5)
+        {
+            encoderDrive(WHEEL_SPEED, 20, 8);
+
+            servoSetup();
+
+            straightenRight(1);
+
+            while (opModeIsActive() && runtime.seconds() < 3)
+            {
+                skyStoneBot.getGripperAssembly().wheelIntake(INTAKE_SPEED);
+                skyStoneBot.getChassisAssembly().moveForward(0.15);
+            }
+
+            skyStoneBot.getChassisAssembly().stopMoving();
+            sleep(500);
+            skyStoneBot.getGripperAssembly().wheelStop();
+
+            skyStoneBot.getPlacementAssembly().slap();
+            sleep(1000);
+
+            skyStoneBot.getPlacementAssembly().grab(gripperGrab);
+            sleep(1000);
+
+            deliverStone();
+
+            placeStone();
+
+            skyStoneBot.getPlacementAssembly().swivel(swivelPlace);
+            sleep(500);
+            skyStoneBot.getPlacementAssembly().gripperSwivel(gripperSwivelPlace);
+
+
+            //Second Block is blockNumber 2 so move back to 12 inches
+            double distanceToDrive = DISTANCE_TO_BRIDGE - 16;
+            telemetry.addData("To Drive:", distanceToDrive);
+            telemetry.update();
+            sleep(3000);
+
+           encoderDrive(WHEEL_SPEED, 0.75 * distanceToDrive, 8);
+           straightenRight(1);
+
+           distanceToDrive = skyStoneBot.getNavigation().frontDistance() - 16;
+           encoderDrive(WHEEL_SPEED, distanceToDrive, 4);
+
+           encoderTurn(WHEEL_SPEED, -45, 5);
+
+        }
+        else if(blockNumber == 4)
+        {
+            encoderDrive(WHEEL_SPEED, 15, 8);
+
+            servoSetup();
+
+            straightenRight(1);
+
+            encoderSide(WHEEL_SPEED, sideShift, 4);
+
+            straightenRight(1);
+
+            encoderDrive(WHEEL_SPEED, 5, 8);
+
+            while (opModeIsActive() && runtime.seconds() < 3)
+            {
+                skyStoneBot.getGripperAssembly().wheelIntake(INTAKE_SPEED);
+                skyStoneBot.getChassisAssembly().moveForward(0.15);
+            }
+
+            skyStoneBot.getChassisAssembly().stopMoving();
+            sleep(500);
+            skyStoneBot.getGripperAssembly().wheelStop();
+
+            skyStoneBot.getPlacementAssembly().slap();
+            sleep(1000);
+
+            skyStoneBot.getPlacementAssembly().grab(gripperGrab);
+            sleep(1000);
+
+            deliverStone();
+
+
+        }
+
+
+
+
+        // Disable Tracking when we are done;
+        targetsSkyStone.deactivate();
     }
 
-    public void alignWithSkyStone(VuforiaTrackable stoneTarget)
+    public void deliverStone()
     {
+        encoderDrive(WHEEL_SPEED, -18, 5);
+
         straightenRight(1);
 
-        //Get the new location of the target and ensure that the target is still visible
-        if (((VuforiaTrackableDefaultListener) stoneTarget.getListener()).isVisible()) {
-            OpenGLMatrix robotLocationTransform = ((VuforiaTrackableDefaultListener) stoneTarget.getListener()).getUpdatedRobotLocation();
-            if (robotLocationTransform != null) {
-                lastLocation = robotLocationTransform;
-            }
-        }
-        else
-        {
-            telemetry.addData("target no longer visible!", "");
-            telemetry.update();
-            sleep(4000);
-        }
+        double backDistance = skyStoneBot.getNavigation().backDistance();
 
+        encoderDrive(WHEEL_SPEED, 24 - backDistance, 3);
 
-        //Find the position of the target
-        VectorF translation = lastLocation.getTranslation();
-        double currentPos = skyStoneBot.getNavigation().rightDistance();
+        encoderTurn(WHEEL_SPEED, 90, 5);
 
-        double targetShift = translation.get(1)/mmPerInch;
+        straightenRight(1);
 
-        //Target Position
-        double blockPos = currentPos - targetShift + 4;//plus 4 because of the the distance betweeen the camera and the sensors
-
-        blockNumber = (int) (Math.ceil(blockPos / 8));
-
-        //Print the Result
-        telemetry.addData("currentPos", currentPos);
-        telemetry.addData("Pos (in)", "{X, Y, Z} = %.1f, %.1f, %.1f",
-                translation.get(0) / mmPerInch, translation.get(1) / mmPerInch, translation.get(2) / mmPerInch);
-        telemetry.addData("Block Position", blockPos);
-        telemetry.addData("Block #", blockNumber);
-        telemetry.addData("Shift" , Math.abs(targetShift + 4));
-        telemetry.update();
-        sleep(250);
-
-        //Shift the Robot so that the arm is Centered
-        if(Math.abs(targetShift + 4) > 2)
-        {
-            encoderSide(WHEEL_SPEED, targetShift + 4, 5);
-            skyStoneBot.getChassisAssembly().stopMoving();
-        }
-
-        //Move close to the block
-        double currentDistance = skyStoneBot.getNavigation().backLaserDistance();
-        double distanceToDrive = DISTANCE_TO_GRAB_BLOCK - currentDistance;
-
-        encoderDrive(WHEEL_SPEED, distanceToDrive, 5);    }
-
-    public void grabStone()
-    {
-        skyStoneBot.getGripperAssembly().lifterUp();
-        sleep(500);
-        lowerScissorLift();
-        sleep(250);
-
-        runtime.reset();
-        while(opModeIsActive() && runtime.seconds() < 1)
-        {
-            skyStoneBot.getGripperAssembly().wheelIntake(INTAKE_SPEED);
-
-            skyStoneBot.getGripperAssembly().lifterDown();
-
-        }
-
-        skyStoneBot.getGripperAssembly().wheelStop();
-        sleep(250);
-
-        skyStoneBot.getGripperAssembly().lifterUp();
-        sleep(500);
-    }
-
-    public void deliverStone1()
-    {
-        //Move Backwards
-        encoderDrive(WHEEL_SPEED, -15, 5);
-
-        //Move to the right to ensure that you don't hit the wall
-        if(blockNumber == 2)
-        {
-            encoderSide(WHEEL_SPEED, -10, 5);
-        }
-
-        //Turn 90 degrees to the left to face the bridge
-        encoderTurn(WHEEL_SPEED, -90, 8);
-
-        straigtenLeft(1);
-
-        crossBridge();
-
-
-    }
-
-    public void crossBridge()
-    {
-        //Measure Distance to Back
-        double currentDistance = skyStoneBot.getNavigation().backLaserDistance();
-        telemetry.addData("distance", currentDistance);
-        telemetry.addData("To Drive", DISTANCE_PAST_BRIDGE - currentDistance);
-        telemetry.update();
-
-        encoderDrive(WHEEL_SPEED, (DISTANCE_PAST_BRIDGE - currentDistance), 10);
-    }
-
-    public void releaseStone()
-    {
-        runtime.reset();
-        while(opModeIsActive() && runtime.seconds() < 1)
-        {
-            skyStoneBot.getGripperAssembly().wheelOutake(INTAKE_SPEED);
-        }
-        skyStoneBot.getGripperAssembly().wheelOutake(0);
-
-
-        encoderScissor(SCISSOR_UP_SPEED, 3, 5);
-        skyStoneBot.getScissorAssembly().move(0);
-
-        encoderDrive(WHEEL_SPEED, -BACK_AWAY_FROM_BLOCK, 8);
-
-        lowerScissorLift();
-    }
-
-    public void faceNextStone()
-    {
-        //Move backwards
-        encoderDrive(WHEEL_SPEED, -48, 5);
-
-        double newBlockPos;
-        if(blockNumber <= 3)
-        {
-            newBlockPos = (8 * (blockNumber + 3)) - 4;
-        }
-        else if(blockNumber >= 5)
-        {
-            newBlockPos = (8 * (blockNumber - 3)) - 4;
-        }
-        else //the fourth block
-        {
-            newBlockPos = (8 * (5)) - 4; //pick up the fifth block
-        }
-        double currentDistance = skyStoneBot.getNavigation().backLaserDistance();
-        double distanceToDrive = -4 + currentDistance - newBlockPos + 9; //- 4 to centralize with the block, +9 because dstance sensor is 9 in from the center of robot
-        telemetry.addData("current distance", currentDistance);
-        telemetry.addData("New Block Pos", newBlockPos);
+        double distanceToDrive = DISTANCE_TO_BRIDGE - skyStoneBot.getNavigation().frontDistance();
         telemetry.addData("Distance to Drive", distanceToDrive);
         telemetry.update();
+        sleep(2000);
 
-        encoderDrive(WHEEL_SPEED, -distanceToDrive, 8);
+        encoderDrive(WHEEL_SPEED, -distanceToDrive, 7);
 
-        straigtenLeft(1);
-
-        encoderTurn(WHEEL_SPEED, 90, 6);
-
-        encoderScissor(SCISSOR_UP_SPEED, 2, 5);
-
-        //Move close to the block
-        currentDistance = skyStoneBot.getNavigation().backLaserDistance();
-        distanceToDrive = DISTANCE_TO_GRAB_BLOCK - currentDistance;
-
-        encoderDrive(WHEEL_SPEED, distanceToDrive, 5);
     }
 
-    public void deliverStone2()
+    public void placeStone()
     {
-        //Move Backward
-        encoderDrive(WHEEL_SPEED, -10, 5);
+        skyStoneBot.getPlacementAssembly().swivel(swivelGrab);
+        sleep(500);
+        skyStoneBot.getPlacementAssembly().gripperSwivel(gripperSwivelGrab);
+        sleep(1000);
+        skyStoneBot.getPlacementAssembly().grab(gripperPlace);
+        sleep(1000);
 
-        //Turn to face the bridge
-        encoderTurn(WHEEL_SPEED, -90, 8);
-
-        straigtenLeft(1);
-
-        crossBridge();
     }
 
+    public void servoSetup()
+    {
+        //Servo Positions
+        skyStoneBot.getChassisAssembly().openHook();
+        skyStoneBot.getPlacementAssembly().swivel(swivelPlace);
+        skyStoneBot.getPlacementAssembly().gripperSwivel(gripperSwivelPlace);
+        skyStoneBot.getPlacementAssembly().grab(gripperPlace);
+        skyStoneBot.getPlacementAssembly().slapperReturn();
+    }
 
     public void straightenRight(double timeOut)
     {
         double angle = skyStoneBot.getNavigation().rightAngle();
-        ElapsedTime senseTime = new ElapsedTime();
-        while(Math.abs(angle) > 15 && opModeIsActive() && senseTime.seconds() < timeOut)
+        do
         {
+         /*   ElapsedTime senseTime = new ElapsedTime();
+            while (Math.abs(angle) > 15 && opModeIsActive() && senseTime.seconds() < timeOut) {
+                angle = skyStoneBot.getNavigation().rightAngle();
+                telemetry.addData("Angle", angle);
+                telemetry.update();
+            }
+            */
+
+
+            telemetry.addData("Angle", angle);
+            telemetry.addData("Front Right", skyStoneBot.getNavigation().frontRightDistance());
+            telemetry.addData("Back Right", skyStoneBot.getNavigation().backRightDistance());
+            telemetry.update();
+
+            if (Math.abs(angle) > 5 && Math.abs(angle) < 70) {
+                encoderTurn(WHEEL_SPEED, angle, 3);
+            }
+
             angle = skyStoneBot.getNavigation().rightAngle();
-        }
-        if(angle > 360)
-        {
-            angle = 0;
-        }
-
-        telemetry.addData("Angle", angle);
-        telemetry.addData("MRFR", skyStoneBot.getNavigation().mrfrDistance());
-        telemetry.addData("MRBR", skyStoneBot.getNavigation().mrbrDistance());
-        telemetry.update();
-        sleep(500);
-
-        encoderTurn(WHEEL_SPEED, angle, 3);
+        }while(Math.abs(angle) > 10);
     }
 
-
-    public void straigtenLeft(double timeOut)
-    {
-        double angle = -skyStoneBot.getNavigation().leftAngle();
-        ElapsedTime senseTime = new ElapsedTime();
-        while(Math.abs(angle) > 15 && opModeIsActive() && senseTime.seconds() < timeOut)
-        {
-            angle = -skyStoneBot.getNavigation().leftAngle();
-        }
-        if(angle > 360)
-        {
-            angle = 0;
-        }
-        telemetry.addData("Angle", angle);
-        telemetry.addData("MRFL", skyStoneBot.getNavigation().mrflDistance());
-        telemetry.addData("MRBL", skyStoneBot.getNavigation().mrblDistance());
-        telemetry.update();
-        sleep(500);
-
-        encoderTurn(WHEEL_SPEED, angle, 5);
-    }
-
-
-
-    public void lowerScissorLift()
-    {
-        encoderScissor(SCISSOR_DOWN_SPEED, -30, 8);
-        skyStoneBot.getScissorAssembly().move(0);
-
-        while(opModeIsActive() && skyStoneBot.getScissorAssembly().rightTouch())
-        {
-            skyStoneBot.getScissorAssembly().moveRight(-SCISSOR_DOWN_SPEED);
-        }
-        skyStoneBot.getScissorAssembly().move(0);
-        while(opModeIsActive() && skyStoneBot.getScissorAssembly().leftTouch())
-        {
-            skyStoneBot.getScissorAssembly().moveLeft(-SCISSOR_DOWN_SPEED);
-        }
-        skyStoneBot.getScissorAssembly().move(0);
-    }
-
-
+    /**
+     *ENCODER DRIVE METHOD
+     * @param speed (at which the robot should move)
+     * @param inches (positive is forward, negative is backwards)
+     * @param timeoutS (the robot will stop moving if it after this many seconds)
+     */
     public void encoderDrive(double speed, double inches, double timeoutS)
     {
         int newBackLeftTarget;
@@ -577,7 +530,6 @@ public class BlueQuarry extends LinearOpMode
             skyStoneBot.getChassisAssembly().setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         }
 
-        sleep(250);
     }//end of encoderSide
 
     public void encoderTurn(double speed, double degrees, double timeoutS) {
@@ -634,77 +586,5 @@ public class BlueQuarry extends LinearOpMode
             skyStoneBot.getChassisAssembly().setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         }
 
-        sleep(250);
     }//end of encoderTurn
-
-    public void encoderScissor(double speed, double inches, double timeoutS) {
-
-        telemetry.addData("In Encoder Scissor", inches);
-        telemetry.update();
-
-        int newLeftTarget;
-        int newRightTarget;
-
-        // Ensure that the opmode is still active
-        if (opModeIsActive()) {
-
-            // Determine new target position, and pass to motor controller
-            newLeftTarget = skyStoneBot.getScissorAssembly().getLeftPosition() + (int) (inches * -COUNTS_PER_SCISSOR_INCH);
-            newRightTarget = skyStoneBot.getScissorAssembly().getRightPosition() + (int) (inches * -COUNTS_PER_SCISSOR_INCH);
-            skyStoneBot.getScissorAssembly().setLeftPosition(newLeftTarget);
-            skyStoneBot.getScissorAssembly().setRightPosition(newRightTarget);
-
-            // Turn On RUN_TO_POSITION
-            skyStoneBot.getScissorAssembly().setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-            // reset the timeout time and start motion.
-            runtime.reset();
-            skyStoneBot.getScissorAssembly().move(Math.abs(speed));
-
-            // keep looping while we are still active, and there is time left, and both motors are running.
-            // Note: We use (isBusy() && isBusy()) in the loop test, which means that when EITHER motor hits
-            // its target position, the motion will stop.  This is "safer" in the event that the robot will
-            // always end the motion as soon as possible.
-            // However, if you require that BOTH motors have finished their moves before the robot continues
-            // onto the next step, use (isBusy() || isBusy()) in the loop test.
-            if(inches < 0)
-            {
-                while (opModeIsActive() && skyStoneBot.getScissorAssembly().leftTouch() && skyStoneBot.getScissorAssembly().rightTouch() &&
-                        (runtime.seconds() < timeoutS) &&
-                        (skyStoneBot.getScissorAssembly().isLeftBusy() && skyStoneBot.getScissorAssembly().isRightBusy())) {
-
-                    // Display it for the driver.
-                    telemetry.addData("Path1", "Running to %7d :%7d", newLeftTarget, newRightTarget);
-                    telemetry.addData("Path2", "Running at %7d :%7d",
-                            skyStoneBot.getScissorAssembly().getLeftPosition(),
-                            skyStoneBot.getScissorAssembly().getRightPosition());
-                    telemetry.update();
-                }
-            }
-            else
-            {
-                while (opModeIsActive() && (runtime.seconds() < timeoutS) &&
-                        (skyStoneBot.getScissorAssembly().isLeftBusy() && skyStoneBot.getScissorAssembly().isRightBusy())) {
-
-                    // Display it for the driver.
-                    telemetry.addData("Path1", "Running to %7d :%7d", newLeftTarget, newRightTarget);
-                    telemetry.addData("Path2", "Running at %7d :%7d",
-                            skyStoneBot.getScissorAssembly().getLeftPosition(),
-                            skyStoneBot.getScissorAssembly().getRightPosition());
-                    telemetry.update();
-                }
-            }
-
-            // Stop all motion;
-            skyStoneBot.getScissorAssembly().move(0);
-
-            // Turn off RUN_TO_POSITION
-            skyStoneBot.getScissorAssembly().setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-
-            //  sleep(250);   // optional pause after each move
-
-        }
-    }//end of encoderScissor
-
-
 }

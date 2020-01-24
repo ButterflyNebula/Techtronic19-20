@@ -12,25 +12,39 @@ public class GripperAssembly
         robotHardware = hardware;
     }
 
-
-    public void lifterDown ()
-    {robotHardware.lifter.setPosition(LIFTER_DOWN_POSITION); }
-
-    public void lifterUp ()
-    {robotHardware.lifter.setPosition(LIFTER_UP_POSITION); }
-
-
-    public void lifterMotion(double Position)
-    {
-        robotHardware.lifter.setPosition(Position);
-    }
-
     public void wheelIntake(double power)
     {
-        robotHardware.gripperWheel.setPower(-power);
+        robotHardware.leftIntake.setPower(power);
+        robotHardware.rightIntake.setPower(power);
     }
 
-    public void wheelOutake(double power) {robotHardware.gripperWheel.setPower(power);}
+    public void wheelOutake(double power) {
+        robotHardware.leftIntake.setPower(-power);
+        robotHardware.rightIntake.setPower(-power);
+    }
 
-    public void wheelStop() {robotHardware.gripperWheel.setPower(0);}
+    public void leftIntake(double power)
+    {
+        robotHardware.leftIntake.setPower(power);
+    }
+
+    public void leftOutake(double power)
+    {
+        robotHardware.leftIntake.setPower(-power);
+    }
+
+    public void rightIntake(double power)
+    {
+        robotHardware.rightIntake.setPower(power);
+    }
+
+    public void rightOutake(double power)
+    {
+        robotHardware.rightIntake.setPower(-power);
+    }
+
+    public void wheelStop() {
+        robotHardware.leftIntake.setPower(0);
+        robotHardware.rightIntake.setPower(0);
+    }
 }

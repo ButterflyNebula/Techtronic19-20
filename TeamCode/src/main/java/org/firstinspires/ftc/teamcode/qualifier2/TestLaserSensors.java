@@ -23,8 +23,8 @@ public class TestLaserSensors extends LinearOpMode
 
         while (opModeIsActive())
         {
-            telemetry.addData("Front Laser", skyStoneBot.getNavigation().frontLaserDistance());
-            telemetry.addData("Back Laser", skyStoneBot.getNavigation().backLaserDistance());
+            telemetry.addData("Front Laser", skyStoneBot.getNavigation().frontDistance());
+            telemetry.addData("Back Laser", skyStoneBot.getNavigation().backDistance());
             telemetry.update();
         }
     }
