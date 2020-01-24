@@ -199,7 +199,7 @@ public class TeleOpMode extends LinearOpMode {
             else if(flip)
             {
                 skyStoneBot.getPlacementAssembly().swivel(swivelGrab);
-                //sleep(100);
+                sleep(100);
                 skyStoneBot.getPlacementAssembly().gripperSwivel(gripperSwivelGrab);
                 skyStoneBot.getPlacementAssembly().slapperReturn();
             }

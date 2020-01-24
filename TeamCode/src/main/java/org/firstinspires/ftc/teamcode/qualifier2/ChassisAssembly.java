@@ -18,7 +18,7 @@ public class ChassisAssembly
     private double leftHookDown = 0.2;
     private double rightHookDown = 0.6;
 
-    private double leftHookUp = 0.85;
+    private double leftHookUp = 0.88;
     private double rightHookUp = 0.01;
 
     /**
