@@ -1,17 +1,19 @@
 package org.firstinspires.ftc.teamcode.qualifier2;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+@Disabled
 @Autonomous (name = "BlueBuildingWall", group = "Qualifier")
 public class BlueBuildingWallSide extends LinearOpMode {
 
     //Creating a Rover robot object
     SkyBot skyStoneBot = new SkyBot();
 
-    //Time
+    // Time
     ElapsedTime runtime = new ElapsedTime();
 
     //Encoder Constants

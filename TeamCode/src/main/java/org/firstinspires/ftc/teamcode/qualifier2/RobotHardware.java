@@ -33,12 +33,16 @@ public class RobotHardware
     public Servo swivel = null;
     public Servo slapper = null;
     public Servo capstone = null;
+    public Servo capstoneDoor = null;
 
     public DcMotor lifter = null;
 
     //Gripper
     public DcMotor leftIntake = null;
     public DcMotor rightIntake = null;
+
+    //Tape Measure
+    public DcMotor tapeMeasure = null;
 
     //Distance Sensors
     Rev2mDistanceSensor frontRightSensor = null;
@@ -55,9 +59,7 @@ public class RobotHardware
     //Touch Sensor
     DigitalChannel lifterTouch = null;
 
-    //Color Distance Sensors
-    ColorSensor colorSensor = null;
-    DistanceSensor colorDistanceSensor = null;
+    BNO055IMU imu;
 
 
     //Adding the Hardware Map
@@ -94,6 +96,7 @@ public class RobotHardware
         slapper = hwMap.get(Servo.class, "slapper");
 
         capstone = hwMap.get(Servo.class, "capstone");
+        capstoneDoor = hwMap.get(Servo.class, "capstoneDoor");
 
         lifter = hwMap.get(DcMotor.class, "lifter");
         lifter.setDirection(DcMotor.Direction.REVERSE);
@@ -117,8 +120,10 @@ public class RobotHardware
 
         lifterTouch = hwMap.get(DigitalChannel.class, "lifterTouch");
 
-        colorSensor = hwMap.get(ColorSensor.class, "colorSensor");
-        colorDistanceSensor = hwMap.get(DistanceSensor. class, "colorSensor");
+        imu = hwMap.get(BNO055IMU.class, "imu");
+
+        tapeMeasure = hwMap.get(DcMotor.class, "tapeMeasure");
+        tapeMeasure.setDirection(DcMotor.Direction.FORWARD);
 
     }
 

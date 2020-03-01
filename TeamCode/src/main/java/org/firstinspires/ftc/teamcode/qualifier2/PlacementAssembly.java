@@ -6,8 +6,11 @@ public class PlacementAssembly
     double slapPosition = 0.3;
     double slapperReturnPosition = 1;
 
-    double capstonePosition = 0.5;
-    double capstoneReturnPosition = 0.1;
+    double capstonePosition = 0.65;
+    double capstoneReturnPosition = 0.9;
+
+    double doorUp = 0.7;
+    double doorDown = 0;
 
 
     protected PlacementAssembly(RobotHardware hardware)
@@ -68,4 +71,9 @@ public class PlacementAssembly
     public void capstoneReturn(){robotHardware.capstone.setPosition(capstoneReturnPosition);}
 
     public void capstone(double position){robotHardware.capstone.setPosition(position);}
+
+    public void openDoor(){robotHardware.capstoneDoor.setPosition(doorUp);}
+
+    public void closeDoor(){robotHardware.capstoneDoor.setPosition(doorDown);}
+
 }

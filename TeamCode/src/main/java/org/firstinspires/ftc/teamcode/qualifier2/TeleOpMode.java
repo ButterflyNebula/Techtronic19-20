@@ -7,16 +7,15 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 @TeleOp(name = "TeleOpMode", group = "Qualifier")
 public class TeleOpMode extends LinearOpMode {
-    private static double   WHEEL_SPEED = 1.0;
+    private double   WHEEL_SPEED = 1.0;
     private static double INTAKE_SPEED = 1.0;
 
-    final double COUNTS_PER_MOTOR_REV    = 1120 ;    // eg: TETRIX Motor Encoder
-    final double DRIVE_GEAR_REDUCTION = 0.5;
+    //Encoder Constants
+    final double COUNTS_PER_MOTOR_REV    = 537.6;
+    final double DRIVE_GEAR_REDUCTION = 1;
     final double WHEEL_DIAMETER_INCHES = 4.0;
     final double COUNTS_PER_INCH = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
             (WHEEL_DIAMETER_INCHES * Math.PI);
-    final double COUNTS_PER_SCISSOR_INCH = 200;
-
 
     boolean intaking = false;
 
@@ -53,6 +52,9 @@ public class TeleOpMode extends LinearOpMode {
         skyStoneBot.getPlacementAssembly().grab(gripperPlace);
         skyStoneBot.getPlacementAssembly().slapperReturn();
 
+        skyStoneBot.getPlacementAssembly().capstoneReturn();
+        skyStoneBot.getPlacementAssembly().closeDoor();
+
         double moveto = 0.56;
         double moveto2 = 0.17;
 
@@ -60,7 +62,7 @@ public class TeleOpMode extends LinearOpMode {
         {
             //Gamepad 1 Controls
             double drive = gamepad1.left_stick_y;
-            double turn = gamepad1.right_stick_x;
+            double turn = gamepad1.left_stick_x;
             double sideRight = gamepad1.right_trigger;
             double sideLeft = gamepad1.left_trigger;
 
@@ -68,7 +70,7 @@ public class TeleOpMode extends LinearOpMode {
             boolean closeHook = gamepad1.dpad_right;
 
             boolean gripperIntake = gamepad1.x;
-            boolean gripperOutake = gamepad2.b; //changed to gamepad 2
+            boolean gripperOutake = gamepad2.a; //changed to gamepad 2
 
             boolean grab = gamepad1.y;
             boolean place = gamepad1.a;
@@ -82,10 +84,10 @@ public class TeleOpMode extends LinearOpMode {
             boolean rightHook = gamepad1.right_bumper;
             boolean leftHook = gamepad1.left_bumper;
 
-            float diagonalFrontRight = gamepad2.right_stick_x;
-            float diagonalFrontLeft = gamepad2.right_stick_x;
-            float diagonalBackRight = gamepad2.left_stick_x;
-            float diagonalBackLeft = gamepad2.left_stick_x;
+
+            boolean scrunch = gamepad2.y;
+
+            float tapeMeasure = gamepad2.left_stick_y;
 
 
 
@@ -113,7 +115,7 @@ public class TeleOpMode extends LinearOpMode {
             else if (sideLeft > 0) {
                 skyStoneBot.getChassisAssembly().moveLeft(WHEEL_SPEED * sideLeft);
             }
-            else if(diagonalFrontRight > 0)
+         /*   else if(diagonalFrontRight > 0)
             {
                 skyStoneBot.getChassisAssembly().diagonalForwardRight(WHEEL_SPEED);
             }
@@ -129,6 +131,7 @@ public class TeleOpMode extends LinearOpMode {
             {
                 skyStoneBot.getChassisAssembly().diagonalBackwardsLeft(WHEEL_SPEED);
             }
+          */
             //stop moving
             else {
                 skyStoneBot.getChassisAssembly().stopMoving();
@@ -157,11 +160,13 @@ public class TeleOpMode extends LinearOpMode {
             {
                 skyStoneBot.getChassisAssembly().openHook();
                 sleep(250);
+                WHEEL_SPEED = 1;
             }
             else if(closeHook)
             {
                 skyStoneBot.getChassisAssembly().closeHook();
                 sleep(250);
+                WHEEL_SPEED = 0.5;
             }
 
             if(rightHook)
@@ -198,19 +203,52 @@ public class TeleOpMode extends LinearOpMode {
             }
             else if(flip)
             {
-                skyStoneBot.getPlacementAssembly().swivel(swivelGrab);
-                sleep(100);
-                skyStoneBot.getPlacementAssembly().gripperSwivel(gripperSwivelGrab);
-                skyStoneBot.getPlacementAssembly().slapperReturn();
+                WHEEL_SPEED = 0.5;
+
+                if(capstonePlaced == false)
+                {
+                    skyStoneBot.getPlacementAssembly().swivel(swivelGrab);
+                    sleep(100);
+                    skyStoneBot.getPlacementAssembly().gripperSwivel(gripperSwivelGrab);
+                    skyStoneBot.getPlacementAssembly().slapperReturn();
+                }
+                else
+                {
+                    while(skyStoneBot.getPlacementAssembly().robotHardware.swivel.getPosition() < swivelGrab)
+                    {
+                        double currentPos = skyStoneBot.getPlacementAssembly().robotHardware.swivel.getPosition();
+
+                        skyStoneBot.getPlacementAssembly().swivel(currentPos + 0.0005);
+                    }
+
+                    while(skyStoneBot.getPlacementAssembly().robotHardware.gripperSwivel.getPosition() < gripperSwivelGrab)
+                    {
+                        double currentPos = skyStoneBot.getPlacementAssembly().robotHardware.gripperSwivel.getPosition();
+
+                        skyStoneBot.getPlacementAssembly().gripperSwivel(currentPos + 0.001);
+                    }
+
+
+//                    skyStoneBot.getPlacementAssembly().swivel(swivelGrab);
+  //                  sleep(100);
+     //               skyStoneBot.getPlacementAssembly().gripperSwivel(gripperSwivelGrab);
+       //             skyStoneBot.getPlacementAssembly().slapperReturn();
+                    capstonePlaced = false;
+                    skyStoneBot.getPlacementAssembly().capstoneReturn();
+                    skyStoneBot.getPlacementAssembly().closeDoor();
+                }
             }
 
+
             else if (place){
+
+                WHEEL_SPEED = 1;
+
                 skyStoneBot.getPlacementAssembly().grab(gripperPlace);
                 sleep(250);
 
-
-                encoderDrive(0.5, 10, 5);
-                sleep(250);
+               encoderDrive(0.5, 10, 5);
+               // sleep(250);
 
                 while (opModeIsActive() && skyStoneBot.getPlacementAssembly().lifterTouchState())
                 {
@@ -224,16 +262,27 @@ public class TeleOpMode extends LinearOpMode {
 
             if(capstone)
             {
-                if(capstonePlaced)
-                {
-                    skyStoneBot.getPlacementAssembly().capstoneReturn();
-                    capstonePlaced = false;
-                }
-                else
-                {
+                    skyStoneBot.getPlacementAssembly().openDoor();
+                    sleep(250);
                     skyStoneBot.getPlacementAssembly().placeCapstone();
                     capstonePlaced = true;
-                }
+            }
+
+            if(scrunch)
+            {
+                skyStoneBot.getPlacementAssembly().swivel(0.2);
+                skyStoneBot.getPlacementAssembly().gripperSwivel(0.9);
+                skyStoneBot.getPlacementAssembly().grab(0.1);
+            }
+
+            if(tapeMeasure != 0)
+            {
+
+                skyStoneBot.getChassisAssembly().robotHardware.tapeMeasure.setPower(-tapeMeasure);
+            }
+            else
+            {
+                skyStoneBot.getChassisAssembly().robotHardware.tapeMeasure.setPower(0);
             }
 
         }

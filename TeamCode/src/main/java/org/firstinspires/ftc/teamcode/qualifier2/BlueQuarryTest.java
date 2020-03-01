@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.qualifier2;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -24,7 +25,8 @@ import static org.firstinspires.ftc.robotcore.external.navigation.AxesOrder.YZX;
 import static org.firstinspires.ftc.robotcore.external.navigation.AxesReference.EXTRINSIC;
 import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer.CameraDirection.BACK;
 
-@Autonomous(name = "BlueQuarryTest", group = "Qualifier")
+@Disabled
+@Autonomous(name = "AutoBlueQuarryBridge", group = "Qualifier")
 public class BlueQuarryTest extends LinearOpMode {
     // IMPORTANT: If you are using a USB WebCam, you must select CAMERA_CHOICE = BACK; and PHONE_IS_PORTRAIT = false;
     private static final VuforiaLocalizer.CameraDirection CAMERA_CHOICE = BACK;
@@ -79,7 +81,7 @@ public class BlueQuarryTest extends LinearOpMode {
     double swivelPlace = 0.56;
 
 
-    //Variables
+    // Variables
     double blockNumber;
     double sideShift;
 
@@ -88,7 +90,9 @@ public class BlueQuarryTest extends LinearOpMode {
     final double INTAKE_SPEED = 1.0;
     final double WHEEL_SPEED = 1.0;
     final double CAMERA_TO_GRIPPER = 6;
-    final double DISTANCE_TO_BRIDGE = 80;
+    double DISTANCE_TO_BRIDGE = 80;
+    final double DISTANCE_TO_FOUNDATION = 36;
+
 
 
     //Encoder Constants
@@ -238,7 +242,6 @@ public class BlueQuarryTest extends LinearOpMode {
             telemetry.update();
         }
 
-        sleep(1000);
 
         if(blockNumber < 4 || blockNumber > 6)
         {
@@ -247,11 +250,80 @@ public class BlueQuarryTest extends LinearOpMode {
 
         if(blockNumber == 5)
         {
+
+            DISTANCE_TO_BRIDGE = 46;
+
+
             encoderDrive(WHEEL_SPEED, 20, 8);
 
             servoSetup();
 
-            straightenRight(1);
+            //straightenRight(1);
+
+            while (opModeIsActive() && runtime.seconds() < 3)
+            {
+                skyStoneBot.getGripperAssembly().wheelIntake(INTAKE_SPEED);
+                skyStoneBot.getChassisAssembly().moveForward(0.15);
+            }
+
+            skyStoneBot.getChassisAssembly().stopMoving();
+            sleep(500);
+            skyStoneBot.getGripperAssembly().wheelStop();
+
+            skyStoneBot.getPlacementAssembly().slap();
+            sleep(1000);
+
+            skyStoneBot.getPlacementAssembly().grab(gripperGrab);
+            sleep(1000);
+
+            deliverStone();
+
+         //   driveToFoundation();
+
+            placeStone();
+
+            parkUnderBridge();
+
+       /*     encoderDrive(WHEEL_SPEED, 12, 5);
+
+            skyStoneBot.getPlacementAssembly().swivel(swivelPlace);
+            sleep(500);
+            skyStoneBot.getPlacementAssembly().gripperSwivel(gripperSwivelPlace);
+
+/*
+            //Second Block is blockNumber 2 so move back to 12 inches
+            double distanceToDrive = DISTANCE_TO_BRIDGE - 16;
+            telemetry.addData("To Drive:", distanceToDrive);
+            telemetry.update();
+            sleep(3000);
+
+           encoderDrive(WHEEL_SPEED, 0.75 * distanceToDrive, 8);
+           straightenRight(1);
+
+           distanceToDrive = skyStoneBot.getNavigation().frontDistance() - 16;
+           encoderDrive(WHEEL_SPEED, distanceToDrive, 4);
+
+           encoderTurn(WHEEL_SPEED, -45, 5);
+
+ */
+
+        }
+        else if(blockNumber == 4)
+        {
+
+            DISTANCE_TO_BRIDGE = 56;
+
+            sideShift = skyStoneBot.getNavigation().rightDistance() - 16;
+
+            encoderDrive(WHEEL_SPEED, 15, 8);
+
+            servoSetup();
+
+            encoderSide(WHEEL_SPEED, sideShift, 4);
+
+            encoderDrive(WHEEL_SPEED, 5, 8);
+
+//            straightenRight(1);
 
             while (opModeIsActive() && runtime.seconds() < 3)
             {
@@ -273,39 +345,25 @@ public class BlueQuarryTest extends LinearOpMode {
 
             placeStone();
 
-            skyStoneBot.getPlacementAssembly().swivel(swivelPlace);
-            sleep(500);
-            skyStoneBot.getPlacementAssembly().gripperSwivel(gripperSwivelPlace);
+            parkUnderBridge();
 
-
-            //Second Block is blockNumber 2 so move back to 12 inches
-            double distanceToDrive = DISTANCE_TO_BRIDGE - 16;
-            telemetry.addData("To Drive:", distanceToDrive);
-            telemetry.update();
-            sleep(3000);
-
-           encoderDrive(WHEEL_SPEED, 0.75 * distanceToDrive, 8);
-           straightenRight(1);
-
-           distanceToDrive = skyStoneBot.getNavigation().frontDistance() - 16;
-           encoderDrive(WHEEL_SPEED, distanceToDrive, 4);
-
-           encoderTurn(WHEEL_SPEED, -45, 5);
 
         }
-        else if(blockNumber == 4)
+        else
         {
+            sideShift = skyStoneBot.getNavigation().rightDistance() - 40;
+            DISTANCE_TO_BRIDGE = 36;
+
+
             encoderDrive(WHEEL_SPEED, 15, 8);
 
             servoSetup();
 
-            straightenRight(1);
-
             encoderSide(WHEEL_SPEED, sideShift, 4);
 
-            straightenRight(1);
-
             encoderDrive(WHEEL_SPEED, 5, 8);
+
+//            straightenRight(1);
 
             while (opModeIsActive() && runtime.seconds() < 3)
             {
@@ -325,7 +383,7 @@ public class BlueQuarryTest extends LinearOpMode {
 
             deliverStone();
 
-
+            placeStone();
         }
 
 
@@ -337,24 +395,40 @@ public class BlueQuarryTest extends LinearOpMode {
 
     public void deliverStone()
     {
-        encoderDrive(WHEEL_SPEED, -18, 5);
+        encoderDrive(WHEEL_SPEED, -22, 5);
 
-        straightenRight(1);
+      //  straightenRight(1);
 
-        double backDistance = skyStoneBot.getNavigation().backDistance();
-
-        encoderDrive(WHEEL_SPEED, 24 - backDistance, 3);
 
         encoderTurn(WHEEL_SPEED, 90, 5);
 
-        straightenRight(1);
+       // straightenRight(1);
 
-        double distanceToDrive = DISTANCE_TO_BRIDGE - skyStoneBot.getNavigation().frontDistance();
-        telemetry.addData("Distance to Drive", distanceToDrive);
-        telemetry.update();
-        sleep(2000);
 
-        encoderDrive(WHEEL_SPEED, -distanceToDrive, 7);
+        encoderDrive(WHEEL_SPEED, -DISTANCE_TO_BRIDGE, 7);
+
+    }
+
+    public void driveToFoundation()
+    {
+        encoderDrive(WHEEL_SPEED, -DISTANCE_TO_FOUNDATION, 5);
+
+//        straightenRight(1);
+
+        encoderTurn(WHEEL_SPEED, 90, 5);
+
+  //      straightenRight(1);
+
+        double frontDistance = skyStoneBot.getNavigation().frontDistance();
+
+        encoderDrive(0.3, 32 - frontDistance, 8);
+
+    }
+
+    public void parkUnderBridge()
+    {
+        encoderDrive(WHEEL_SPEED, 12, 5);
+        servoSetup();
 
     }
 
@@ -378,19 +452,20 @@ public class BlueQuarryTest extends LinearOpMode {
         skyStoneBot.getPlacementAssembly().grab(gripperPlace);
         skyStoneBot.getPlacementAssembly().slapperReturn();
     }
-
+/*
     public void straightenRight(double timeOut)
     {
         double angle = skyStoneBot.getNavigation().rightAngle();
+        double count = 0;
         do
         {
-         /*   ElapsedTime senseTime = new ElapsedTime();
+            ElapsedTime senseTime = new ElapsedTime();
             while (Math.abs(angle) > 15 && opModeIsActive() && senseTime.seconds() < timeOut) {
                 angle = skyStoneBot.getNavigation().rightAngle();
                 telemetry.addData("Angle", angle);
                 telemetry.update();
             }
-            */
+
 
 
             telemetry.addData("Angle", angle);
@@ -399,13 +474,20 @@ public class BlueQuarryTest extends LinearOpMode {
             telemetry.update();
 
             if (Math.abs(angle) > 5 && Math.abs(angle) < 70) {
-                encoderTurn(WHEEL_SPEED, angle, 3);
+                encoderTurn(0.5, angle, 3);
+                count = 0;
+            }
+            else if (Math.abs(angle) > 70 && count == 0)
+            {
+                encoderDrive(WHEEL_SPEED, -5, 5);
+                count++;
             }
 
             angle = skyStoneBot.getNavigation().rightAngle();
         }while(Math.abs(angle) > 10);
     }
 
+  */
     /**
      *ENCODER DRIVE METHOD
      * @param speed (at which the robot should move)

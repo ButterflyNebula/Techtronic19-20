@@ -71,21 +71,7 @@ public class Navigation
     protected double backDistance() { return robotHardware.backLaser.getDistance(DistanceUnit.INCH);}
     protected double frontDistance() { return robotHardware.frontLaser.getDistance(DistanceUnit.INCH);}
 
-    protected boolean isYellow()
-    {
-        double red = robotHardware.colorSensor.red();
-        double blue = robotHardware.colorSensor.blue();
-        double green = robotHardware.colorSensor.green();
 
-        if(red > blue + 100 && green > blue + 100)
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
 
 
 }

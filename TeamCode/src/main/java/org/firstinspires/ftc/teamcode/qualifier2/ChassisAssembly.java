@@ -86,10 +86,10 @@ public class ChassisAssembly
      */
     protected void moveLeft (double speed)
     {
-        robotHardware.frontLeftWheel.setPower(speed);
-        robotHardware.backLeftWheel.setPower(-speed);
-        robotHardware.frontRightWheel.setPower(-speed);
-        robotHardware.backRightWheel.setPower(speed);
+        robotHardware.frontLeftWheel.setPower(-speed);
+        robotHardware.backLeftWheel.setPower(speed);
+        robotHardware.frontRightWheel.setPower(speed);
+        robotHardware.backRightWheel.setPower(-speed);
     }
 
     /**
@@ -99,10 +99,10 @@ public class ChassisAssembly
      */
     protected void moveRight (double speed)
     {
-        robotHardware.frontLeftWheel.setPower(-speed);
-        robotHardware.backLeftWheel.setPower(speed);
-        robotHardware.frontRightWheel.setPower(speed);
-        robotHardware.backRightWheel.setPower(-speed);
+        robotHardware.frontLeftWheel.setPower(speed);
+        robotHardware.backLeftWheel.setPower(-speed);
+        robotHardware.frontRightWheel.setPower(-speed);
+        robotHardware.backRightWheel.setPower(speed);
     }
 
     protected void diagonalForwardLeft (double speed)

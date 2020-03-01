@@ -1,28 +1,28 @@
 package org.firstinspires.ftc.teamcode.qualifier2;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
-@Disabled
-@Autonomous (name = "RedBuildingBridge", group = "Qualifier")
-public class RedBuildingBridgeSide extends LinearOpMode {
+
+@Autonomous (name = "BackwardsPark", group = "Qualifier")
+public class BackwardsPark extends LinearOpMode {
 
     //Creating a Rover robot object
     SkyBot skyStoneBot = new SkyBot();
 
-    //Time
-    ElapsedTime runtime = new ElapsedTime();
+
 
     //Encoder Constants
-    final double COUNTS_PER_MOTOR_REV    = 1120 ;    // eg: TETRIX Motor Encoder
-    final double DRIVE_GEAR_REDUCTION = 0.5;
+    final double COUNTS_PER_MOTOR_REV    = 537.6;
+    final double DRIVE_GEAR_REDUCTION = 1;
     final double WHEEL_DIAMETER_INCHES = 4.0;
     final double COUNTS_PER_INCH = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
             (WHEEL_DIAMETER_INCHES * Math.PI);
+
+    final double COUNTS_PER_DEGREE = 9.0;
+
     final double COUNTS_PER_SIDE_INCH = 50;
-    final double COUNTS_PER_DEGREE = 8.5;
 
     //Movement
     final double WHEEL_SPEED = 1;
@@ -37,11 +37,13 @@ public class RedBuildingBridgeSide extends LinearOpMode {
     double gripperSwivelPlace = 0.23;
     double swivelPlace = 0.56;
 
+    ElapsedTime runtime = new ElapsedTime();
+
     @Override
     public void runOpMode()
     {
         /**
-         * INITIALIZATION
+         *   INITIALIZATION
          */
         //Intialize Robot
         skyStoneBot.initRobot(hardwareMap);
@@ -62,40 +64,7 @@ public class RedBuildingBridgeSide extends LinearOpMode {
 
 
         //Centralize with the foundation
-        encoderSide(WHEEL_SPEED, -15, 5);
-
-        //Use the wall to straighten
-        encoderDrive(WHEEL_SPEED/2, 4, 2);
-
-        //Drive up to the foundation
-        encoderDrive(WHEEL_SPEED, -26, 8);
-        encoderDrive(0.2, -8, 8);
-
-        //Hook onto the foundation
-        skyStoneBot.getChassisAssembly().closeHook();
-        sleep(1000);
-
-        //Pull the foundation back
-        encoderDrive(WHEEL_SPEED, 28, 8);
-        encoderDrive(0.2, 14, 8);
-
-        //Turn the foundation
-        runtime.reset();
-        while (opModeIsActive() && runtime.seconds() < 1.3)
-        {
-            skyStoneBot.getChassisAssembly().moveRight(WHEEL_SPEED);
-        }
-        skyStoneBot.getChassisAssembly().stopMoving();
-
-        //Let go of the foundation
-        skyStoneBot.getChassisAssembly().openHook();
-        sleep(1000);
-
-        encoderDrive(WHEEL_SPEED, -24, 7);
-        encoderDrive(0.2, -6, 7);
-
-        //Park
-        encoderDrive(WHEEL_SPEED, 44, 6);
+        encoderDrive(WHEEL_SPEED, -15, 5);
     }
 
     /**
