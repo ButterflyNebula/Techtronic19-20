@@ -1,9 +1,11 @@
 package org.firstinspires.ftc.teamcode.qualifier2;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+@Disabled
 @TeleOp(name = "LaserDistanceTest", group = "Test")
 public class TestLaserSensors extends LinearOpMode
 {
@@ -23,8 +25,8 @@ public class TestLaserSensors extends LinearOpMode
 
         while (opModeIsActive())
         {
-            telemetry.addData("Front Laser", skyStoneBot.getNavigation().frontLaserDistance());
-            telemetry.addData("Back Laser", skyStoneBot.getNavigation().backLaserDistance());
+            telemetry.addData("Front Laser", skyStoneBot.getNavigation().frontDistance());
+            telemetry.addData("Back Laser", skyStoneBot.getNavigation().backDistance());
             telemetry.update();
         }
     }
